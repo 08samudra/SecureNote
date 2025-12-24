@@ -3,15 +3,28 @@ import 'package:hive/hive.dart';
 import '../../data/note_model.dart';
 
 class AddNotePage extends StatefulWidget {
-  const AddNotePage({super.key});
+  final NoteModel? note; // null = add, ada = edit
+
+  const AddNotePage({super.key, this.note});
 
   @override
   State<AddNotePage> createState() => _AddNotePageState();
 }
 
 class _AddNotePageState extends State<AddNotePage> {
-  final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
+  late TextEditingController _titleController;
+  late TextEditingController _contentController;
+
+  bool get isEdit => widget.note != null;
+
+  @override
+  void initState() {
+    super.initState();
+    _titleController = TextEditingController(text: widget.note?.title ?? '');
+    _contentController = TextEditingController(
+      text: widget.note?.content ?? '',
+    );
+  }
 
   @override
   void dispose() {
@@ -20,7 +33,7 @@ class _AddNotePageState extends State<AddNotePage> {
     super.dispose();
   }
 
-  void _saveNote() async {
+  void _saveNote() {
     if (_titleController.text.trim().isEmpty &&
         _contentController.text.trim().isEmpty) {
       return;
@@ -28,22 +41,31 @@ class _AddNotePageState extends State<AddNotePage> {
 
     final box = Hive.box<NoteModel>('notesBox');
 
-    final note = NoteModel(
-      title: _titleController.text.trim(),
-      content: _contentController.text.trim(),
-      createdAt: DateTime.now(),
-    );
+    if (isEdit) {
+      final editedNote = NoteModel(
+        title: _titleController.text.trim(),
+        content: _contentController.text.trim(),
+        createdAt: widget.note!.createdAt,
+      );
 
-    await box.add(note);
+      box.put(widget.note!.key, editedNote);
+    } else {
+      final newNote = NoteModel(
+        title: _titleController.text.trim(),
+        content: _contentController.text.trim(),
+        createdAt: DateTime.now(),
+      );
 
-    if (!mounted) return;
+      box.add(newNote);
+    }
+
     Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Tambah Catatan')),
+      appBar: AppBar(title: Text(isEdit ? 'Edit Catatan' : 'Tambah Catatan')),
       body: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -74,7 +96,7 @@ class _AddNotePageState extends State<AddNotePage> {
               child: ElevatedButton.icon(
                 onPressed: _saveNote,
                 icon: const Icon(Icons.save),
-                label: const Text('Simpan'),
+                label: Text(isEdit ? 'Update' : 'Simpan'),
               ),
             ),
           ],

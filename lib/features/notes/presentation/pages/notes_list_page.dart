@@ -4,6 +4,7 @@ import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../data/note_model.dart';
 import '../../data/note_box_provider.dart';
+import '../providers/search_provider.dart';
 import 'add_note_page.dart';
 import 'note_detail_page.dart';
 
@@ -15,22 +16,74 @@ class NotesListPage extends ConsumerWidget {
     final box = ref.watch(notesBoxProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Secure Notes'), centerTitle: true),
+      appBar: AppBar(
+        title: Consumer(
+          builder: (context, ref, _) {
+            final isSearching = ref.watch(isSearchingProvider);
+
+            if (isSearching) {
+              return TextField(
+                autofocus: true,
+                decoration: const InputDecoration(
+                  hintText: 'Cari catatan...',
+                  border: InputBorder.none,
+                ),
+                onChanged: (value) {
+                  ref.read(searchQueryProvider.notifier).state = value;
+                },
+              );
+            }
+
+            return const Text('SecureNote');
+          },
+        ),
+        actions: [
+          Consumer(
+            builder: (context, ref, _) {
+              final isSearching = ref.watch(isSearchingProvider);
+
+              if (isSearching) {
+                return IconButton(
+                  icon: const Icon(Icons.close),
+                  onPressed: () {
+                    ref.read(isSearchingProvider.notifier).state = false;
+                    ref.read(searchQueryProvider.notifier).state = '';
+                  },
+                );
+              }
+
+              return IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: () {
+                  ref.read(isSearchingProvider.notifier).state = true;
+                },
+              );
+            },
+          ),
+        ],
+      ),
+
       body: ValueListenableBuilder(
         valueListenable: box.listenable(),
         builder: (context, Box<NoteModel> notesBox, _) {
           if (notesBox.isEmpty) {
             return const Center(child: Text('Belum ada catatan 📝'));
           }
+          final query = ref.watch(searchQueryProvider).toLowerCase();
+
+          final notes = notesBox.values.where((note) {
+            return note.title.toLowerCase().contains(query) ||
+                note.content.toLowerCase().contains(query);
+          }).toList();
+
+          if (notes.isEmpty) {
+            return const Center(child: Text('Catatan tidak ditemukan 🔍'));
+          }
 
           return ListView.builder(
-            itemCount: notesBox.length,
+            itemCount: notes.length,
             itemBuilder: (context, index) {
-              final note = notesBox.getAt(index);
-
-              if (note == null) {
-                return const SizedBox.shrink();
-              }
+              final note = notes[index];
 
               return Dismissible(
                 key: ValueKey(note.key),
@@ -84,7 +137,8 @@ class NotesListPage extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => NoteDetailPage(note: note),
+                        builder: (_) =>
+                            NoteDetailPage(noteKey: note.key as int),
                       ),
                     );
                   },

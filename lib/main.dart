@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
 import 'core/theme/app_theme.dart';
 import 'features/notes/data/note_model.dart';
 import 'features/notes/presentation/pages/notes_list_page.dart';
