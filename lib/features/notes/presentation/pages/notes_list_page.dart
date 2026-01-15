@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:hive/hive.dart';
 import 'package:hive_flutter/hive_flutter.dart';
+import '../../../security/security_settings_page.dart';
+
 import '../../data/note_model.dart';
 import '../../data/note_box_provider.dart';
 import '../providers/search_provider.dart';
@@ -42,6 +43,7 @@ class NotesListPage extends ConsumerWidget {
             builder: (context, ref, _) {
               final isSearching = ref.watch(isSearchingProvider);
 
+              // 🔍 MODE SEARCH
               if (isSearching) {
                 return IconButton(
                   icon: const Icon(Icons.close),
@@ -52,11 +54,28 @@ class NotesListPage extends ConsumerWidget {
                 );
               }
 
-              return IconButton(
-                icon: const Icon(Icons.search),
-                onPressed: () {
-                  ref.read(isSearchingProvider.notifier).state = true;
-                },
+              // 🔐 MODE NORMAL (SEARCH + SECURITY)
+              return Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.security),
+                    tooltip: 'Security',
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => SecuritySettingsPage(),
+                        ),
+                      );
+                    },
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.search),
+                    onPressed: () {
+                      ref.read(isSearchingProvider.notifier).state = true;
+                    },
+                  ),
+                ],
               );
             },
           ),
@@ -69,6 +88,7 @@ class NotesListPage extends ConsumerWidget {
           if (notesBox.isEmpty) {
             return const Center(child: Text('Belum ada catatan 📝'));
           }
+
           final query = ref.watch(searchQueryProvider).toLowerCase();
 
           final notes = notesBox.values.where((note) {
@@ -95,13 +115,11 @@ class NotesListPage extends ConsumerWidget {
                   child: const Icon(Icons.delete, color: Colors.white),
                 ),
                 onDismissed: (_) {
-                  // 🔑 SIMPAN DATA + KEY (IDENTITY STABIL)
                   final deletedKey = note.key as int;
                   final deletedTitle = note.title;
                   final deletedContent = note.content;
                   final deletedCreatedAt = note.createdAt;
 
-                  // HAPUS BERDASARKAN KEY (BUKAN INDEX)
                   box.delete(deletedKey);
 
                   ScaffoldMessenger.of(context)
@@ -117,8 +135,6 @@ class NotesListPage extends ConsumerWidget {
                               content: deletedContent,
                               createdAt: deletedCreatedAt,
                             );
-
-                            // RESTORE DENGAN KEY ASLI
                             box.put(deletedKey, restoredNote);
                           },
                         ),
@@ -148,6 +164,7 @@ class NotesListPage extends ConsumerWidget {
           );
         },
       ),
+
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           Navigator.push(
