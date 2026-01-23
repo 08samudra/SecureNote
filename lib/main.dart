@@ -6,6 +6,8 @@ import 'package:note_samtech/features/security/presentation/lock_screen_page.dar
 import 'core/theme/app_theme.dart';
 import 'features/notes/data/note_model.dart';
 import 'features/notes/presentation/pages/notes_list_page.dart';
+import 'core/security/session_key_manager.dart';
+import 'package:note_samtech/features/security/presentation/set_pin_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,9 +19,6 @@ Future<void> main() async {
   if (!Hive.isAdapterRegistered(0)) {
     Hive.registerAdapter(NoteModelAdapter());
   }
-
-  // Open Box
-  await Hive.openBox<NoteModel>('notesBox');
 
   runApp(const ProviderScope(child: MyApp()));
 }
@@ -51,6 +50,7 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
 
   bool _checked = false;
   bool _unlocked = false;
+  bool _hasPin = false;
 
   @override
   void initState() {
@@ -70,7 +70,8 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
 
     setState(() {
       _checked = true;
-      _unlocked = !hasPin;
+      _hasPin = hasPin;
+      _unlocked = false; // selalu mulai terkunci
     });
   }
 
@@ -81,6 +82,7 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
       final hasPin = await _lockService.hasPin();
 
       if (hasPin) {
+        SessionKeyManager.clear();
         setState(() {
           _unlocked = false;
         });
@@ -94,9 +96,28 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
+    // FIRST INSTALL → SET PIN
+    if (!_hasPin) {
+      return SetPinPage(
+        onCompleted: () async {
+          // 🔥 BUKA HIVE SETELAH SESSION KEY ADA
+          await Hive.openBox<NoteModel>('notesBox');
+
+          setState(() {
+            _hasPin = true;
+            _unlocked = true;
+          });
+        },
+      );
+    }
+
+    // NORMAL LOCK
     if (!_unlocked) {
       return LockScreenPage(
-        onUnlocked: () {
+        onUnlocked: () async {
+          // 🔥 BUKA HIVE SETELAH UNLOCK
+          await Hive.openBox<NoteModel>('notesBox');
+
           setState(() {
             _unlocked = true;
           });

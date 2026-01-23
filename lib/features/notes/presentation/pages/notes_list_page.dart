@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 import '../../../security/security_settings_page.dart';
-
 import '../../data/note_model.dart';
 import '../../data/note_box_provider.dart';
 import '../providers/search_provider.dart';
@@ -18,6 +17,35 @@ class NotesListPage extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
+        centerTitle: true,
+        leading: Consumer(
+          builder: (context, ref, _) {
+            final isSearching = ref.watch(isSearchingProvider);
+
+            if (isSearching) {
+              return IconButton(
+                icon: const Icon(Icons.close),
+                onPressed: () {
+                  ref.read(isSearchingProvider.notifier).state = false;
+                  ref.read(searchQueryProvider.notifier).state = '';
+                },
+              );
+            }
+
+            return IconButton(
+              icon: const Icon(Icons.security),
+              tooltip: 'Security',
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const SecuritySettingsPage(),
+                  ),
+                );
+              },
+            );
+          },
+        ),
         title: Consumer(
           builder: (context, ref, _) {
             final isSearching = ref.watch(isSearchingProvider);
@@ -43,39 +71,16 @@ class NotesListPage extends ConsumerWidget {
             builder: (context, ref, _) {
               final isSearching = ref.watch(isSearchingProvider);
 
-              // 🔍 MODE SEARCH
               if (isSearching) {
-                return IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () {
-                    ref.read(isSearchingProvider.notifier).state = false;
-                    ref.read(searchQueryProvider.notifier).state = '';
-                  },
-                );
+                return const SizedBox(width: 48);
+                // spacer biar simetris dengan leading
               }
 
-              // 🔐 MODE NORMAL (SEARCH + SECURITY)
-              return Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.security),
-                    tooltip: 'Security',
-                    onPressed: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => SecuritySettingsPage(),
-                        ),
-                      );
-                    },
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.search),
-                    onPressed: () {
-                      ref.read(isSearchingProvider.notifier).state = true;
-                    },
-                  ),
-                ],
+              return IconButton(
+                icon: const Icon(Icons.search),
+                onPressed: () {
+                  ref.read(isSearchingProvider.notifier).state = true;
+                },
               );
             },
           ),

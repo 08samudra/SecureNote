@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../core/security/lock_service.dart';
+import 'package:note_samtech/core/security/key_derivation_service.dart';
+import 'package:note_samtech/core/security/session_key_manager.dart';
 
 class LockScreenPage extends StatefulWidget {
   final VoidCallback onUnlocked;
@@ -16,10 +18,14 @@ class _LockScreenPageState extends State<LockScreenPage> {
   String? _error;
 
   void _unlock() async {
-    final success = await _lockService.verifyPin(_controller.text);
+    final pin = _controller.text;
+    final success = await _lockService.verifyPin(pin);
 
     if (success) {
-      widget.onUnlocked(); // 🔥 unlock AppGate
+      final key = await KeyDerivationService.deriveKeyFromPin(pin);
+      SessionKeyManager.setKey(key);
+
+      widget.onUnlocked(); // unlock AppGate
     } else {
       setState(() {
         _error = 'PIN salah';

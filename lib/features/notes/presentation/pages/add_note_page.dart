@@ -83,6 +83,8 @@ class _AddNotePageState extends State<AddNotePage> {
                 controller: _contentController,
                 maxLines: null,
                 expands: true,
+                textAlignVertical: TextAlignVertical.top,
+                keyboardType: TextInputType.multiline,
                 decoration: const InputDecoration(
                   labelText: 'Isi Catatan',
                   alignLabelWithHint: true,

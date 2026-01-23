@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/security/lock_service.dart';
+import '../security/presentation/change_pin_page.dart';
 
 class SecuritySettingsPage extends StatefulWidget {
   const SecuritySettingsPage({super.key});
@@ -10,7 +11,6 @@ class SecuritySettingsPage extends StatefulWidget {
 
 class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
   final _lockService = LockService();
-
   bool _hasPin = false;
 
   @override
@@ -24,61 +24,6 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
     setState(() {
       _hasPin = hasPin;
     });
-  }
-
-  Future<void> _setPin(BuildContext context) async {
-    final pinController = TextEditingController();
-    final confirmController = TextEditingController();
-
-    final result = await showDialog<bool>(
-      context: context,
-      barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        title: const Text('Set PIN'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: pinController,
-              keyboardType: TextInputType.number,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'PIN baru'),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: confirmController,
-              keyboardType: TextInputType.number,
-              obscureText: true,
-              decoration: const InputDecoration(labelText: 'Konfirmasi PIN'),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (pinController.text == confirmController.text &&
-                  pinController.text.isNotEmpty) {
-                Navigator.pop(context, true);
-              }
-            },
-            child: const Text('Simpan'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      await _lockService.savePin(pinController.text);
-      _checkPin();
-    } else if (result == false) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('PIN tidak cocok')));
-    }
   }
 
   Future<void> _disablePin() async {
@@ -97,13 +42,23 @@ class _SecuritySettingsPageState extends State<SecuritySettingsPage> {
             subtitle: Text(_hasPin ? 'Aktif' : 'Tidak aktif'),
             value: _hasPin,
             onChanged: (value) {
-              if (value) {
-                _setPin(context);
-              } else {
+              if (!value) {
                 _disablePin();
               }
             },
           ),
+          if (_hasPin)
+            ListTile(
+              leading: const Icon(Icons.vpn_key),
+              title: const Text('Change PIN'),
+              onTap: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ChangePinPage()),
+                );
+                _checkPin();
+              },
+            ),
         ],
       ),
     );
