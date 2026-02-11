@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:note_samtech/core/security/lock_service.dart';
 import 'package:note_samtech/core/security/pin_rotation_service.dart';
-import 'package:flutter/services.dart';
 
 class ChangePinPage extends StatefulWidget {
   const ChangePinPage({super.key});
@@ -25,11 +24,11 @@ class _ChangePinPageState extends State<ChangePinPage> {
       _loading = true;
     });
 
-    final ok = await _lockService.verifyPin(_oldPin.text);
-    if (!ok) {
+    final result = await _lockService.verifyPin(_oldPin.text);
+
+    if (result != PinResult.success) {
       setState(() {
         _error = 'PIN lama salah';
-        _loading = false;
       });
       return;
     }

@@ -114,12 +114,15 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
     // NORMAL LOCK
     if (!_unlocked) {
       return LockScreenPage(
-        onUnlocked: () async {
-          // 🔥 BUKA HIVE SETELAH UNLOCK
-          await Hive.openBox<NoteModel>('notesBox');
-
+        onUnlocked: () {
           setState(() {
             _unlocked = true;
+          });
+        },
+        onPanicWipe: () {
+          setState(() {
+            _hasPin = false;
+            _unlocked = false;
           });
         },
       );
