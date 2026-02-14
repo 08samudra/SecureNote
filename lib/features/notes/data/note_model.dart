@@ -1,5 +1,5 @@
 import 'package:hive/hive.dart';
-import '../../../core/security/encryption_service.dart';
+import '../../security/service/encryption_service.dart';
 
 part 'note_model.g.dart';
 

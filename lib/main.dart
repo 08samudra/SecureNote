@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:note_samtech/core/security/lock_service.dart';
-import 'package:note_samtech/features/security/presentation/lock_screen_page.dart';
+import 'package:SecureNote/features/security/service/lock_service.dart';
+import 'package:SecureNote/features/security/presentation/pages/lock_screen_page.dart';
 import 'core/theme/app_theme.dart';
 import 'features/notes/data/note_model.dart';
 import 'features/notes/presentation/pages/notes_list_page.dart';
-import 'core/security/session_key_manager.dart';
-import 'package:note_samtech/features/security/presentation/set_pin_page.dart';
+import 'features/security/service/session_key_manager.dart';
+import 'package:SecureNote/features/security/presentation/pages/set_pin_page.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -68,10 +68,12 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
   void _checkLock() async {
     final hasPin = await _lockService.hasPin();
 
+    if (!mounted) return; // 🔥 WAJIB
+
     setState(() {
       _checked = true;
       _hasPin = hasPin;
-      _unlocked = false; // selalu mulai terkunci
+      _unlocked = false;
     });
   }
 
@@ -80,6 +82,8 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused ||
         state == AppLifecycleState.inactive) {
       final hasPin = await _lockService.hasPin();
+
+      if (!mounted) return;
 
       if (hasPin) {
         SessionKeyManager.clear();
@@ -96,12 +100,11 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
 
-    // FIRST INSTALL → SET PIN
+    // 🔐 FIRST INSTALL
     if (!_hasPin) {
       return SetPinPage(
-        onCompleted: () async {
-          // 🔥 BUKA HIVE SETELAH SESSION KEY ADA
-          await Hive.openBox<NoteModel>('notesBox');
+        onCompleted: () {
+          if (!mounted) return;
 
           setState(() {
             _hasPin = true;
@@ -111,7 +114,7 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
       );
     }
 
-    // NORMAL LOCK
+    // 🔒 LOCK SCREEN
     if (!_unlocked) {
       return LockScreenPage(
         onUnlocked: () {
@@ -119,7 +122,13 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
             _unlocked = true;
           });
         },
-        onPanicWipe: () {
+        onPanicWipe: () async {
+          if (!mounted) return;
+
+          await _performSecureWipe();
+
+          if (!mounted) return;
+
           setState(() {
             _hasPin = false;
             _unlocked = false;
@@ -129,5 +138,24 @@ class _AppGateState extends State<AppGate> with WidgetsBindingObserver {
     }
 
     return const NotesListPage();
+  }
+
+  Future<void> _performSecureWipe() async {
+    try {
+      // 1️⃣ Clear session key
+      SessionKeyManager.clear();
+
+      // 2️⃣ Tutup SEMUA box
+      await Hive.close();
+
+      // 3️⃣ Hapus file fisik
+      await Hive.deleteBoxFromDisk('notesBox');
+      await Hive.deleteBoxFromDisk('securityBox');
+
+      // 4️⃣ Hapus PIN
+      await _lockService.clearPin();
+    } catch (e) {
+      debugPrint("SECURE WIPE ERROR: $e");
+    }
   }
 }

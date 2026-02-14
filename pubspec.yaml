@@ -1,5 +1,5 @@
-name: note_samtech
-description: "A new Flutter project."
+name: SecureNote
+description: "A secure note-taking app built with Flutter, utilizing Hive for local storage and Riverpod for state management. SecureNote ensures your notes are encrypted and protected, providing a seamless and secure user experience."
 
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
@@ -23,11 +23,13 @@ dependencies:
   flutter_secure_storage: ^10.0.0
   crypto: ^3.0.7
   encrypt: ^5.0.3
+  intl: ^0.20.2
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
   build_runner: ^2.4.9
+  flutter_launcher_icons: ^0.14.4
 
  
   flutter_lints: ^5.0.0
@@ -35,5 +37,15 @@ dev_dependencies:
 
 flutter:
 
+  assets:
+    - assets/images/SecureNote_Icon.png
+
 
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/SecureNote_Icon.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/SecureNote_Icon.png"

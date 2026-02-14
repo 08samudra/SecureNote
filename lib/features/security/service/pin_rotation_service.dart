@@ -1,7 +1,7 @@
 import 'package:hive_flutter/hive_flutter.dart';
-import 'package:note_samtech/core/security/key_derivation_service.dart';
-import 'package:note_samtech/core/security/session_key_manager.dart';
-import 'package:note_samtech/features/notes/data/note_model.dart';
+import 'package:SecureNote/features/security/service/key_derivation_service.dart';
+import 'package:SecureNote/features/security/service/session_key_manager.dart';
+import 'package:SecureNote/features/notes/data/note_model.dart';
 
 class PinRotationService {
   static Future<void> rotatePin({
